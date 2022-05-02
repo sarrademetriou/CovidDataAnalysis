@@ -1,0 +1,149 @@
+SELECT * FROM dbo.CovidDeaths;
+SELECT * FROM dbo.covidvaccinations;
+
+--Total Cases Vs Total Deaths (--for a country eg UK)
+-- likelihood of dying if contract covid
+SELECT location, date, total_cases, total_deaths, CAST(total_deaths AS FLOAT)/ CAST(total_cases AS FLOAT)*100 AS 'PercentageDeaths'
+FROM dbo.CovidDeaths
+--WHERE location LIKE '%kingdom%' 
+ORDER BY 1, 2;
+
+
+--Total Cases Vs Population in UK
+--Percentage Population has Covid Each Day in UK
+SELECT location, date, population, total_cases, CAST(total_cases AS FLOAT)/ CAST(population AS FLOAT)*100 AS 'PercentageCovidpop-1'
+FROM dbo.CovidDeaths
+WHERE location LIKE '%kingdom%'
+ORDER BY 1, 2;
+
+
+-- Countries with Highest Infection Rates compared to Population:
+SELECT location, population, MAX(total_cases) AS 'Highest Infection Count', MAX(CAST(total_cases AS FLOAT)/ CAST(population AS FLOAT)*100) AS 'PercentPopulationInfected'
+FROM dbo.CovidDeaths
+GROUP BY location, population
+ORDER BY PercentPopulationInfected DESC;
+
+
+--Countries with Highest Death Count :
+SELECT location, MAX(CAST(total_deaths AS INT)) AS 'HighestDeathCount'
+FROM dbo.CovidDeaths
+WHERE continent IS NOT NULL
+GROUP BY location 
+ORDER BY HighestDeathCount DESC;
+
+
+--Countries with Highest Percentage Death Count Per Population:
+SELECT location, MAX(CAST(total_deaths AS INT)) AS 'Highest Death Count', MAX(CAST(total_deaths AS FLOAT))/CAST(population AS FLOAT)*100 AS 'PercentageDeathsPerPopulation'
+FROM dbo.CovidDeaths
+WHERE continent IS NOT NULL AND total_deaths IS NOT NULL
+GROUP BY location, population
+ORDER BY PercentageDeathsPerPopulation DESC;
+
+
+--BREAKING DOWN BY CONTINENT:
+--Continent ordered by Highest Death Count:
+SELECT location, MAX(CAST(total_deaths AS INT)) AS 'HighestDeathCount'
+FROM dbo.CovidDeaths
+WHERE continent IS NULL AND total_deaths IS NOT NULL 
+GROUP BY location
+ORDER BY HighestDeathCount DESC;
+
+
+
+--GLOBAL: Number New Cases and New Deaths across the Whole World per Day from 01.01.2020
+-- Also Shows Percentage of New Cases & Deaths 
+SELECT date, SUM(new_cases) AS 'DailyNewCases', SUM(new_deaths) AS 'DailyNewDeaths', SUM(CAST(new_deaths AS FLOAT))/SUM(CAST(new_cases AS FLOAT))* 100 AS 'Daily Death Percentage'
+FROM dbo.CovidDeaths
+WHERE continent IS NOT NULL
+GROUP BY date 
+ORDER BY 1, 2;
+
+
+--Total number Cases, Total number Deaths and the % of those who died across the globe in time period. 
+SELECT SUM(new_cases) AS 'New Cases', SUM(new_deaths) AS 'New Deaths', SUM(CAST(new_deaths AS FLOAT))/SUM(CAST(new_cases AS FLOAT))*100 AS 'Death Percentage of New Cases'
+FROM dbo.CovidDeaths
+WHERE continent IS NOT NULL
+ORDER BY 1;
+
+
+--Total Population VS Vaccinated
+-- Shows Percentage of Population that has recieved at least one Covid Vaccine
+
+SELECT dea.continent, dea.location, dea.date, dea.population, vac.new_vaccinations
+FROM dbo.CovidDeaths dea
+JOIN dbo.covidvaccinations vac 
+ON dea.location = vac.location 
+AND dea.date = vac.date
+WHERE dea.continent IS NOT NULL 
+ORDER BY 2, 3;
+
+--Total Population Vs Vaccinated
+--Percentage Population Received at least one Covid Vaccine with Rolling Count Vaccines 
+SELECT dea.continent, dea.location, dea.date, dea.population, vac.new_vaccinations
+, SUM(vac.new_vaccinations) OVER (PARTITION BY dea.location ORDER BY dea.location, dea.date) AS 'RollingPeopleVaccinated' -- at each location, we want the adding up to be broken up and start over
+FROM dbo.CovidDeaths dea
+JOIN dbo.covidvaccinations vac 
+ON dea.location = vac.location 
+AND dea.date = vac.date 
+WHERE dea.continent IS NOT NULL --AND vac.new_vaccinations IS NOT NULL
+ORDER BY 2, 3;
+
+
+-- Using CTE to perform Calculation on Partition By in previous query
+-- Percentage Population Vaccinated by Day in Each Location
+
+WITH PopVsVac (Continent, Location, Date, Population, new_vaccinations, RollingPeopleVaccinated)
+AS 
+(
+SELECT dea.continent, dea.location, dea.date, dea.population, vac.new_vaccinations
+, SUM(vac.new_vaccinations) OVER (PARTITION BY dea.location ORDER BY dea.location, dea.date) AS 'RollingPeopleVaccinated' 
+FROM dbo.CovidDeaths dea
+JOIN dbo.covidvaccinations vac 
+ON dea.location = vac.location 
+AND dea.date = vac.date 
+WHERE dea.continent IS NOT NULL 
+--ORDER BY 2, 3;
+)
+SELECT *, (RollingPeopleVaccinated/population)*100 AS 'PercentagePeopleVaccinated' FROM PopVsVac
+
+
+
+--TEMP TABLE to Perform Calculation on Partition By in last query
+-- Percentage Population Vaccinated by Day in Each Location
+
+DROP TABLE IF EXISTS #PercentPopulationVaccinated
+CREATE TABLE #PercentPopulationVaccinated
+( 
+Continent NVARCHAR(255),
+Location NVARCHAR(255),
+Date DATETIME,
+Population NUMERIC,
+new_vaccinations NUMERIC,
+RollingPeopleVaccinated NUMERIC
+)
+INSERT INTO #PercentPopulationVaccinated
+SELECT dea.continent, dea.location, dea.date, dea.population, vac.new_vaccinations
+, SUM(vac.new_vaccinations) OVER (PARTITION BY dea.location ORDER BY dea.location, dea.date) AS 'RollingPeopleVaccinated' 
+FROM dbo.CovidDeaths dea
+JOIN dbo.covidvaccinations vac 
+ON dea.location = vac.location 
+AND dea.date = vac.date 
+WHERE dea.continent IS NOT NULL 
+SELECT *, (RollingPeopleVaccinated/population)*100 AS 'PercentagePeopleVaccinated' FROM #PercentPopulationVaccinated
+
+
+
+--Creating View To Store Data For Later Visualisations:
+CREATE VIEW PercentPopulationVaccinated AS 
+SELECT dea.continent, dea.location, dea.date, dea.population, vac.new_vaccinations
+, SUM(vac.new_vaccinations) OVER (PARTITION BY dea.location ORDER BY dea.location, dea.date) AS 'RollingPeopleVaccinated' 
+FROM dbo.CovidDeaths dea
+JOIN dbo.covidvaccinations vac 
+ON dea.location = vac.location 
+AND dea.date = vac.date 
+WHERE dea.continent IS NOT NULL 
+
+
+
+
+--to do next: CREATE MORE VIEWS TO USE LATER IN TABLEAU
