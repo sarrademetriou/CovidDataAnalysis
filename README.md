@@ -1,5 +1,9 @@
 # CovidDataAnalysis
-An Analysis on Data collected from the start of Covid to Mid 2021 (for now, project still in progress. Will be edited/updated with future data/analysis)
+Initial Commit: An Analysis on Data collected from the start of Covid to Mid 2021
 
-Tableau Dashboard:
-https://public.tableau.com/app/profile/sarra.demetriou/viz/CovidDashboard01_2020-05_2021/Dashboard1 
+Updated Commit: Analysis with Updated Data from 01Jan2020 to Today (04May2022)
+
+Updated Data Set: https://ourworldindata.org/covid-deaths
+
+Tableau Link to Initial Dashboard: https://public.tableau.com/app/profile/sarra.demetriou/viz/CovidDashboard01_2020-05_2021/Dashboard1 
+
