@@ -17,6 +17,11 @@ WHERE location LIKE '%kingdom%'
 ORDER BY 1, 2;
 
 
+-- Sum of Total Deaths by End Each Year due to Covid:
+SELECT datepart(yyyy, date) AS 'Year', MAX(total_deaths) AS 'Sum Deaths Per Year'
+FROM updcoviddeaths
+GROUP BY datepart(yyyy, date);
+
 
 -- Countries with Highest Infection Rates compared to Population:
 SELECT location, population, MAX(total_cases) AS 'Highest Infection Count', MAX(total_cases/population *100) AS 'PercentPopulationInfected'
