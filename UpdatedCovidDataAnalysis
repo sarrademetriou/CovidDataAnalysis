@@ -56,7 +56,7 @@ GROUP BY location
 ORDER BY HighestDeathCount DESC;
 
 -- Highest Number Deaths per INCOME BAND
-SELECT location, MAX(total_deaths) AS 'HighestDeathCount'
+SELECT location AS 'IncomeBand', MAX(total_deaths) AS 'HighestDeathCount'
 FROM UpdCovidDeaths
 WHERE continent IS NULL 
 AND location LIKE '%income%'
