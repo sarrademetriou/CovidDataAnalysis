@@ -5,5 +5,8 @@ Updated Commit: Analysis with Updated Data from 01Jan2020 to Today (04May2022)
 
 Updated Data Set: https://ourworldindata.org/covid-deaths
 
+
+Tableau Link to Dashboard for UPDATED data: https://public.tableau.com/app/profile/sarra.demetriou/viz/UpdatedCovidAnalysis/Dashboard1
+
 Tableau Link to Initial Dashboard: https://public.tableau.com/app/profile/sarra.demetriou/viz/CovidDashboard01_2020-05_2021/Dashboard1 
 
